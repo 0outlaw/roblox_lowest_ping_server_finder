@@ -1,32 +1,30 @@
-import requests, pyperclip, sys
-
-next_page_cursor = ""
-data = []
+import requests, pyperclip
 
 while True:
-    game_id = input("game_id: ")
+    game_id = input("game id: ")
     if game_id.isdigit():
-        break
+        game_id_status_code = requests.get(f"https://www.roblox.com/games/{game_id}/").status_code
+        if game_id_status_code == 404:
+            print("invalid game id")
+            continue
+        else:
+            break
     else:
-        print("please enter a valid game id.")
+        print("game id format incorrect")
         continue
 
-while True:
-    server_json = requests.get(f"https://games.roblox.com/v1/games/{game_id}/servers/Public?sortOrder=Asc&limit=100&cursor={next_page_cursor}").json()
-    print(f"next_page_cursor: {next_page_cursor}")
-    if "data" in server_json:
-        for server_json_data in server_json["data"]:
-            if "ping" in server_json_data:
-                data.append({"id": server_json_data["id"], "ping": server_json_data["ping"]})
-    if "nextPageCursor" in server_json:
-        if server_json["nextPageCursor"] is None:
-            break
-        else:
-            next_page_cursor = server_json["nextPageCursor"]
+servers_data = []
+def get_servers(next_page_cursor = ""):
+    server_data = requests.get(f"https://games.roblox.com/v1/games/4282985734/servers/Public?limit=100&cursor={next_page_cursor}").json()
+    for main_server_data in server_data.get("data"):
+        servers_data.append({"id": main_server_data.get("id"), "ping": main_server_data.get("ping")})
+    if server_data.get("nextPageCursor") is not None:
+        next_next_page_cursor = server_data.get("nextPageCursor")
+        print(next_next_page_cursor)
+        return get_servers(next_next_page_cursor)
 
-try:
-    min_ping = min(data, key = lambda x: x["ping"])
-    pyperclip.copy(f"Roblox.GameLauncher.joinGameInstance({game_id}, '{min_ping['id']}') // Ping: {min_ping['ping']}")
-except ValueError:
-    print("could not find server")
-    input("press any key to exit")
+
+get_servers()
+
+minimum_server_data = min(servers_data, key = lambda server_data: server_data.get("ping"))
+pyperclip.copy(f"Roblox.GameLauncher.joinGameInstance({game_id}, '{minimum_server_data.get('id')}')")
