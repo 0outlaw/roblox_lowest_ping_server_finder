@@ -15,7 +15,7 @@ while True:
 
 servers_data = []
 def get_servers(next_page_cursor = ""):
-    server_data = requests.get(f"https://games.roblox.com/v1/games/4282985734/servers/Public?limit=100&cursor={next_page_cursor}").json()
+    server_data = requests.get(f"https://games.roblox.com/v1/games/{game_id}/servers/Public?limit=100&cursor={next_page_cursor}").json()
     for main_server_data in server_data.get("data"):
         servers_data.append({"id": main_server_data.get("id"), "ping": main_server_data.get("ping")})
     if server_data.get("nextPageCursor") is not None:
